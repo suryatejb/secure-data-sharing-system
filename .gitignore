@@ -1,0 +1,39 @@
+# ── Secrets & environment ──────────────────────────────────────────────────
+# .env contains SECRET_KEY — NEVER commit it
+.env
+
+# ── Database files ─────────────────────────────────────────────────────────
+*.db
+*.sqlite3
+
+# ── Audit logs (may contain PII) ───────────────────────────────────────────
+audit.log
+*.log
+
+# ── Python bytecode ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# ── Virtual environment ────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Build & distribution ───────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+
+# ── Test artifacts ─────────────────────────────────────────────────────────
+test_output.txt
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Editor ─────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
