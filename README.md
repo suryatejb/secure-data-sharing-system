@@ -208,15 +208,3 @@ Request: bob_guest → GET /data/anonymized
 ① RBAC check:  'data:anonymized:read' in guest_permissions? → NO
    → HTTP 403 Forbidden (RBAC denied, BLP never even reached)
 ```
-
----
-
-## Optional Extensions
-
-The base system has extension points for:
-
-- **AES encryption** of the SQLite database at rest (`cryptography` library)
-- **Audit logging** — log all access attempts with user, timestamp, resource, decision
-- **l-Diversity** — stronger than k-anonymity: ensures sensitive attributes are diverse within each group
-- **Differential Privacy** — add calibrated noise to query results (e.g., with `diffprivlib`)
-- **Hierarchical RBAC** — role inheritance (Analyst inherits Guest permissions automatically)
