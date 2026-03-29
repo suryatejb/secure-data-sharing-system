@@ -28,6 +28,7 @@ build/
 
 # ── Test artifacts ─────────────────────────────────────────────────────────
 test_output.txt
+FIXES_APPLIED.md
 .pytest_cache/
 .coverage
 htmlcov/
