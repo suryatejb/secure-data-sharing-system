@@ -1,0 +1,138 @@
+================================================================
+HOW TO RUN — Secure Data Sharing Platform
+================================================================
+
+PREREQUISITES
+-------------
+- Python 3.10 or later installed and on your PATH
+- pip (included with Python)
+
+
+================================================================
+STEP 1 — Create and activate a virtual environment
+================================================================
+
+Windows:
+    python -m venv venv
+    venv\Scripts\activate
+
+Mac / Linux:
+    python -m venv venv
+    source venv/bin/activate
+
+You should see (venv) at the start of your terminal prompt.
+
+
+================================================================
+STEP 2 — Install dependencies
+================================================================
+
+    pip install -r requirements.txt
+
+
+================================================================
+STEP 3 — Create the .env configuration file  *** REQUIRED ***
+================================================================
+
+The app will NOT start without this file.
+
+Copy the example file to create your own .env:
+
+Windows:
+    copy .env.example .env
+
+Mac / Linux:
+    cp .env.example .env
+
+Then open .env and replace the SECRET_KEY value with a long
+random string. You can generate one with:
+
+    python -c "import secrets; print(secrets.token_hex(32))"
+
+Copy the output and paste it as the SECRET_KEY value in .env:
+
+    SECRET_KEY=paste-your-generated-key-here
+
+The other values in .env can be left as-is for local use.
+
+
+================================================================
+STEP 4 — Choose how to run the project
+================================================================
+
+OPTION A: Standalone terminal demo (no server required)
+-------------------------------------------------------
+Runs a self-contained demonstration of all four security
+concepts (JWT, RBAC, Bell-LaPadula, k-Anonymity) directly
+in the terminal. No browser or HTTP client needed.
+
+    python demo_concepts.py
+
+
+OPTION B: Start the API server
+-------------------------------
+Launches a local FastAPI web server with full REST API.
+
+    python run.py
+
+Once running, open your browser to:
+    http://localhost:8000/docs      ← Interactive Swagger UI
+    http://localhost:8000/redoc    ← ReDoc documentation
+
+Press Ctrl+C to stop the server.
+
+
+================================================================
+STEP 5 — Test the API (requires server running)
+================================================================
+
+OPTION A: Use the Swagger UI
+    Open http://localhost:8000/docs in your browser.
+    Click "Authorize" and enter a Bearer token obtained
+    from the /auth/login endpoint.
+
+OPTION B: Run the smoke test script
+    python smoke_test.py
+
+OPTION C: Run the full API test suite
+    python test_api.py
+
+
+================================================================
+TEST CREDENTIALS
+================================================================
+
+Username         Password       Role      Clearance
+-----------      -----------    --------  ----------------
+admin            admin123       Admin     TOP_SECRET (3)
+alice_analyst    analyst123     Analyst   SECRET (2)
+bob_guest        guest123       Guest     CONFIDENTIAL (1)
+
+
+================================================================
+API ENDPOINTS (quick reference)
+================================================================
+
+Authentication:
+    POST  /auth/login          Login — returns JWT Bearer token
+    GET   /auth/me             Current user info and permissions
+
+Data Access (requires Bearer token):
+    GET   /data/raw            Admin only — raw records (RBAC + BLP)
+    GET   /data/anonymized     Analyst+ — k-anonymised records
+    GET   /data/summary        Guest+ — aggregate statistics only
+
+Attack Simulation:
+    GET   /attack/linking-demo Analyst+ — linking attack walkthrough
+
+
+================================================================
+NOTES
+================================================================
+
+- The server auto-reloads on file changes (development mode).
+- The SQLite database is created automatically on first run;
+  no database setup is required.
+- All endpoints (except /auth/login) require a valid JWT token
+  passed as:   Authorization: Bearer <token>
+================================================================

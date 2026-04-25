@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Patient Data Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-mono); min-height:100vh; overflow-x:hidden; }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 20% 50%, #0d1f3c 0%, #0a0f1e 60%),
+                radial-gradient(ellipse at 80% 20%, #1a0a2e 0%, transparent 50%);
+  }
+  .login-box {
+    width:420px; background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:48px 40px; position:relative; overflow:hidden;
+  }
+  .login-box::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .login-logo { font-family:var(--font-head); font-size:13px; font-weight:600; color:var(--accent); letter-spacing:3px; text-transform:uppercase; margin-bottom:8px; }
+  .login-title { font-family:var(--font-head); font-size:28px; font-weight:800; margin-bottom:6px; line-height:1.2; }
+  .login-sub { font-size:12px; color:var(--muted); margin-bottom:36px; }
+  .field-label { font-size:11px; font-weight:500; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; display:block; }
+  .field-input {
+    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
+    padding:12px 16px; color:var(--text); font-family:var(--font-mono); font-size:14px;
+    outline:none; transition:border-color .2s; margin-bottom:20px;
+  }
+  .field-input:focus { border-color:var(--accent); }
+  .quick-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+  .quick-btn {
+    background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+    padding:8px; font-family:var(--font-mono); font-size:11px; color:var(--muted);
+    cursor:pointer; transition:all .15s; text-align:center;
+  }
+  .quick-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .quick-btn strong { display:block; color:var(--text); font-size:12px; }
+  .login-btn {
+    width:100%; background:var(--accent); border:none; border-radius:8px;
+    padding:14px; font-family:var(--font-head); font-size:15px; font-weight:700;
+    color:#000; cursor:pointer; transition:opacity .2s; letter-spacing:1px;
+  }
+  .login-btn:hover { opacity:.85; }
+  .login-error { background:#2d1515; border:1px solid #5c2020; border-radius:8px; padding:12px 16px; font-size:12px; color:#f87171; margin-bottom:16px; display:none; }
+
+  /* ── APP SHELL ── */
+  #app { display:none; flex-direction:column; min-height:100vh; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    height:56px; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; padding:0 24px; gap:16px; position:sticky; top:0; z-index:100;
+  }
+  .topbar-brand { font-family:var(--font-head); font-weight:800; font-size:16px; color:var(--accent); letter-spacing:1px; margin-right:auto; }
+  .user-badge {
+    display:flex; align-items:center; gap:10px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:8px; padding:6px 14px; font-size:12px;
+  }
+  .clearance-dot { width:8px; height:8px; border-radius:50%; }
+  .dot-ts { background:#ef4444; box-shadow:0 0 6px #ef4444; }
+  .dot-s  { background:#f59e0b; box-shadow:0 0 6px #f59e0b; }
+  .dot-c  { background:#10b981; box-shadow:0 0 6px #10b981; }
+  .logout-btn {
+    background:none; border:1px solid var(--border); border-radius:6px;
+    padding:6px 14px; font-family:var(--font-mono); font-size:12px; color:var(--muted);
+    cursor:pointer; transition:all .15s;
+  }
+  .logout-btn:hover { border-color:var(--danger); color:var(--danger); }
+
+  /* ── LAYOUT ── */
+  .main-layout { display:flex; flex:1; }
+  .sidebar {
+    width:220px; background:var(--surface); border-right:1px solid var(--border);
+    padding:24px 0; position:sticky; top:56px; height:calc(100vh - 56px); overflow-y:auto;
+  }
+  .nav-section { font-size:10px; font-weight:500; color:var(--muted); letter-spacing:2px; text-transform:uppercase; padding:0 20px; margin-bottom:8px; margin-top:20px; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 20px; font-size:13px;
+    color:var(--muted); cursor:pointer; transition:all .15s; border-left:2px solid transparent;
+  }
+  .nav-item:hover { color:var(--text); background:var(--surface2); }
+  .nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(0,212,255,.06); }
+  .nav-item.disabled { opacity:.35; cursor:not-allowed; }
+  .nav-dot { width:6px; height:6px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+  .nav-item.active .nav-dot { background:var(--accent); }
+
+  /* ── CONTENT ── */
+  .content { flex:1; padding:32px; overflow-y:auto; }
+  .page { display:none; }
+  .page.active { display:block; }
+  .page-title { font-family:var(--font-head); font-size:24px; font-weight:800; margin-bottom:4px; }
+  .page-sub { font-size:12px; color:var(--muted); margin-bottom:28px; }
+
+  /* ── CARDS ── */
+  .card {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:24px; margin-bottom:16px;
+  }
+  .card-title { font-family:var(--font-head); font-size:14px; font-weight:700; margin-bottom:16px; color:var(--accent); letter-spacing:1px; text-transform:uppercase; }
+
+  /* ── STAT GRID ── */
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:24px; }
+  .stat-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:20px; }
+  .stat-val { font-family:var(--font-head); font-size:32px; font-weight:800; line-height:1; }
+  .stat-label { font-size:11px; color:var(--muted); margin-top:6px; letter-spacing:1px; text-transform:uppercase; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { text-align:left; padding:10px 14px; font-size:10px; font-weight:500; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+  td { padding:10px 14px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; }
+  tr:hover td { background:rgba(255,255,255,.02); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:500; letter-spacing:.5px; }
+  .tag-secret  { background:#2d1515; color:#fca5a5; border:1px solid #5c2020; }
+  .tag-conf    { background:#1a2810; color:#86efac; border:1px solid #2d4820; }
+  .tag-ts      { background:#2d1515; color:#ef4444; border:1px solid #7f1d1d; }
+  .tag-m  { background:#0f1f2d; color:#7dd3fc; border:1px solid #0c4a6e; }
+  .tag-f  { background:#2d1038; color:#d8b4fe; border:1px solid #581c87; }
+
+  /* ── ALERT ── */
+  .alert { border-radius:10px; padding:16px 20px; margin-bottom:16px; font-size:13px; display:flex; gap:12px; align-items:flex-start; }
+  .alert-danger  { background:#1f0a0a; border:1px solid #7f1d1d; color:#fca5a5; }
+  .alert-success { background:#022c22; border:1px solid #064e3b; color:#6ee7b7; }
+  .alert-info    { background:#0c1a2e; border:1px solid #1e3a5f; color:#7dd3fc; }
+  .alert-warn    { background:#1c1400; border:1px solid #78350f; color:#fcd34d; }
+  .alert-icon { font-size:18px; flex-shrink:0; line-height:1.3; }
+
+  /* ── LAYER TRACE ── */
+  .layer-trace { display:flex; flex-direction:column; gap:8px; }
+  .layer-row { display:flex; align-items:center; gap:12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 16px; }
+  .layer-status { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; font-weight:700; }
+  .ls-ok   { background:#022c22; border:1px solid #064e3b; color:#10b981; }
+  .ls-fail { background:#1f0a0a; border:1px solid #7f1d1d; color:#ef4444; }
+  .ls-skip { background:var(--surface); border:1px solid var(--border); color:var(--muted); }
+  .layer-name { font-size:12px; font-weight:500; min-width:140px; color:var(--text); }
+  .layer-desc { font-size:11px; color:var(--muted); flex:1; }
+
+  /* ── BUTTONS ── */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border-radius:8px; font-family:var(--font-mono); font-size:12px; cursor:pointer; transition:all .15s; border:none; font-weight:500; }
+  .btn-primary { background:var(--accent); color:#000; }
+  .btn-primary:hover { opacity:.85; }
+  .btn-ghost { background:var(--surface2); border:1px solid var(--border); color:var(--text); }
+  .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-danger { background:#7f1d1d; color:#fca5a5; }
+
+  /* ── ANON COMPARE ── */
+  .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .compare-label { font-size:11px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
+  .raw-label { color:#ef4444; }
+  .anon-label { color:#10b981; }
+
+  /* ── AUDIT LOG ── */
+  .audit-line { font-family:var(--font-mono); font-size:11px; padding:8px 12px; border-bottom:1px solid var(--border); display:flex; gap:12px; }
+  .audit-line:last-child { border-bottom:none; }
+  .audit-time { color:var(--muted); min-width:140px; }
+  .audit-user { color:var(--accent); min-width:100px; }
+  .audit-dec-allow { color:var(--success); }
+  .audit-dec-deny  { color:var(--danger); }
+
+  /* ── LOADING ── */
+  .loading { text-align:center; padding:40px; color:var(--muted); font-size:12px; }
+  .spinner { display:inline-block; width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; margin-bottom:8px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ── ATTACK ── */
+  .attack-stat { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .attack-box { background:var(--surface2); border-radius:8px; padding:16px; text-align:center; }
+  .attack-num { font-family:var(--font-head); font-size:36px; font-weight:800; }
+  .attack-num.bad  { color:var(--danger); }
+  .attack-num.good { color:var(--success); }
+  .attack-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">MedSecure</div>
+    <div class="login-title">Hospital Patient<br>Data Portal</div>
+    <div class="login-sub">Secured with JWT · RBAC · Bell-LaPadula · k-Anonymity</div>
+    <div class="login-error" id="login-error"></div>
+    <div style="margin-bottom:20px">
+      <span class="field-label">Quick login</span>
+      <div class="quick-btns">
+        <div class="quick-btn" onclick="quickLogin('admin','admin123')"><strong>admin</strong>IT Administrator</div>
+        <div class="quick-btn" onclick="quickLogin('alice_analyst','analyst123')"><strong>alice_analyst</strong>Research Analyst</div>
+        <div class="quick-btn" onclick="quickLogin('bob_guest','guest123')"><strong>bob_guest</strong>Insurance Auditor</div>
+        <div class="quick-btn" onclick="quickLogin('mallory','mallory123')"><strong>mallory</strong>Junior Technician</div>
+        <div class="quick-btn" onclick="quickLogin('curator','curator123')"><strong>curator</strong>Data Entry Nurse</div>
+      </div>
+    </div>
+    <label class="field-label">Username</label>
+    <input class="field-input" id="uname" type="text" placeholder="username" autocomplete="off">
+    <label class="field-label">Password</label>
+    <input class="field-input" id="pwd" type="password" placeholder="password">
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════ -->
+<div id="app">
+  <!-- topbar -->
+  <div class="topbar">
+    <div class="topbar-brand">MedSecure Portal</div>
+    <div class="user-badge">
+      <div class="clearance-dot" id="clr-dot"></div>
+      <span id="user-label" style="font-size:13px;font-weight:500"></span>
+      <span id="role-label" style="color:var(--muted);font-size:11px"></span>
+      <span id="clr-label" style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent)"></span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
+
+  <div class="main-layout">
+    <!-- sidebar -->
+    <div class="sidebar">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <div class="nav-dot"></div> Dashboard
+      </div>
+      <div class="nav-section">Data Access</div>
+      <div class="nav-item" onclick="showPage('raw')" id="nav-raw">
+        <div class="nav-dot"></div> Raw Records
+      </div>
+      <div class="nav-item" onclick="showPage('anonymized')" id="nav-anonymized">
+        <div class="nav-dot"></div> Anonymized Data
+      </div>
+      <div class="nav-item" onclick="showPage('summary')" id="nav-summary">
+        <div class="nav-dot"></div> Summary Stats
+      </div>
+      <div class="nav-section">Security</div>
+      <div class="nav-item" onclick="showPage('blp')" id="nav-blp">
+        <div class="nav-dot"></div> BLP Demo
+      </div>
+      <div class="nav-item" onclick="showPage('attack')" id="nav-attack">
+        <div class="nav-dot"></div> Linking Attack
+      </div>
+      <div class="nav-section">Admin</div>
+      <div class="nav-item" onclick="showPage('users')" id="nav-users">
+        <div class="nav-dot"></div> User Management
+      </div>
+    </div>
+
+    <!-- content -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="dash-sub">Loading...</div>
+        <div class="stat-grid" id="stat-grid"></div>
+        <div class="card">
+          <div class="card-title">Your access profile</div>
+          <div class="layer-trace" id="access-profile"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Permissions granted</div>
+          <div id="perm-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </div>
+
+      <!-- RAW RECORDS -->
+      <div class="page" id="page-raw">
+        <div class="page-title">Raw Patient Records</div>
+        <div class="page-sub">Unmasked records · Classified SECRET · Admin only</div>
+        <div id="raw-content">
+          <div class="loading"><div class="spinner"></div><div>Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- ANONYMIZED -->
+      <div class="page" id="page-anonymized">
+        <div class="page-title">Anonymized Patient Data</div>
+        <div class="page-sub">k-Anonymity applied · Names removed · Ages and ZIPs generalized</div>
+        <div id="anon-content">
+          <div class="loading"><div class="spinner"></div><div>Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- SUMMARY -->
+      <div class="page" id="page-summary">
+        <div class="page-title">Summary Statistics</div>
+        <div class="page-sub">Aggregate data only · No individual records returned</div>
+        <div id="summary-content">
+          <div class="loading"><div class="spinner"></div><div>Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- BLP DEMO -->
+      <div class="page" id="page-blp">
+        <div class="page-title">Bell-LaPadula Policy Demo</div>
+        <div class="page-sub">Test No-Read-Up and No-Write-Down rules live</div>
+        <div class="card">
+          <div class="card-title">No Read Up — test it</div>
+          <div class="alert alert-info"><span class="alert-icon">ℹ</span><span>Log in as <strong>mallory</strong> to see RBAC pass but BLP block. Log in as <strong>admin</strong> to see both pass.</span></div>
+          <button class="btn btn-primary" onclick="testBLPRead()" style="margin-bottom:16px">Test GET /data/raw as current user →</button>
+          <div id="blp-read-result"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">No Write Down — test it</div>
+          <div class="alert alert-info"><span class="alert-icon">ℹ</span><span>Log in as <strong>curator</strong> to succeed. Log in as <strong>admin</strong> to see BLP block the write.</span></div>
+          <button class="btn btn-primary" onclick="testBLPWrite()" style="margin-bottom:16px">Test POST /data/records as current user →</button>
+          <div id="blp-write-result"></div>
+        </div>
+      </div>
+
+      <!-- ATTACK -->
+      <div class="page" id="page-attack">
+        <div class="page-title">Linking Attack Simulation</div>
+        <div class="page-sub">See how patient records can be re-identified — and how k-Anonymity stops it</div>
+        <div id="attack-content">
+          <div class="loading"><div class="spinner"></div><div>Loading simulation...</div></div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="page" id="page-users">
+        <div class="page-title">User Management</div>
+        <div class="page-sub">All registered users · Admin only</div>
+        <div id="users-content">
+          <div class="loading"><div class="spinner"></div><div>Loading...</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let token = null, currentUser = null;
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function quickLogin(u, p) {
+  document.getElementById('uname').value = u;
+  document.getElementById('pwd').value = p;
+}
+
+async function doLogin() {
+  const u = document.getElementById('uname').value.trim();
+  const p = document.getElementById('pwd').value.trim();
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  if (!u || !p) { err.textContent = 'Enter username and password.'; err.style.display = 'block'; return; }
+  try {
+    const fd = new URLSearchParams(); fd.append('username', u); fd.append('password', p);
+    const r = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:fd });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.detail || 'Login failed.'; err.style.display = 'block'; return; }
+    token = d.access_token;
+    await loadMe();
+    bootApp();
+  } catch(e) {
+    err.textContent = 'Cannot reach server. Is python run.py running?'; err.style.display = 'block';
+  }
+}
+
+async function loadMe() {
+  const r = await apiFetch('/auth/me');
+  currentUser = r;
+}
+
+function doLogout() {
+  token = null; currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('uname').value = '';
+  document.getElementById('pwd').value = '';
+}
+
+async function apiFetch(path, opts={}) {
+  const r = await fetch(`${API}${path}`, { ...opts, headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json', ...(opts.headers||{}) } });
+  return r.json().then(d => { d.__status = r.status; return d; });
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+function bootApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  const u = currentUser;
+  document.getElementById('user-label').textContent = u.username;
+  document.getElementById('role-label').textContent = u.roles.join(', ');
+  document.getElementById('clr-label').textContent = u.security_level_name;
+  const dot = document.getElementById('clr-dot');
+  dot.className = 'clearance-dot ' + ({TOP_SECRET:'dot-ts',SECRET:'dot-s',CONFIDENTIAL:'dot-c',PUBLIC:'dot-c'}[u.security_level_name] || 'dot-c');
+  updateNav();
+  loadDashboard();
+}
+
+function updateNav() {
+  const perms = new Set(currentUser.permissions);
+  const navMap = {
+    'nav-raw':       perms.has('data:raw:read'),
+    'nav-anonymized':perms.has('data:anonymized:read'),
+    'nav-summary':   perms.has('data:summary:read'),
+    'nav-blp':       true,
+    'nav-attack':    perms.has('attack:demo'),
+    'nav-users':     perms.has('users:manage'),
+  };
+  for (const [id, allowed] of Object.entries(navMap)) {
+    const el = document.getElementById(id);
+    if (!allowed) el.classList.add('disabled'); else el.classList.remove('disabled');
+  }
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if (name==='raw') loadRaw();
+  if (name==='anonymized') loadAnon();
+  if (name==='summary') loadSummary();
+  if (name==='attack') loadAttack();
+  if (name==='users') loadUsers();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const u = currentUser;
+  document.getElementById('dash-sub').textContent = `Logged in as ${u.username} · ${u.security_level_name} clearance`;
+
+  const roleDesc = {Admin:'Full access to all patient data and system administration.',Analyst:'Access to anonymized research data and attack demonstration.',Guest:'Aggregate statistics only — no individual records.',SeniorAnalyst:'RBAC grants raw access but BLP clearance is insufficient.',DataCurator:'Can register new patient records. Limited read access.'};
+  const desc = roleDesc[u.roles[0]] || '';
+
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${u.roles.join(', ')}</div><div class="stat-label">Assigned role</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:${{'TOP_SECRET':'#ef4444','SECRET':'#f59e0b','CONFIDENTIAL':'#10b981','PUBLIC':'#64748b'}[u.security_level_name]}">${u.security_level_value}</div><div class="stat-label">Clearance level</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${u.permissions.length}</div><div class="stat-label">Permissions</div></div>
+  `;
+
+  const layers = [
+    {name:'JWT Authentication', ok:true, desc:`Token verified. User loaded as ${u.username}.`},
+    {name:'RBAC Engine', ok:true, desc:`Role: ${u.roles.join(', ')} · ${u.permissions.length} permissions granted.`},
+    {name:'Bell-LaPadula', ok:true, desc:`Clearance: ${u.security_level_name} (${u.security_level_value}). Data access governed by No-Read-Up rule.`},
+    {name:'k-Anonymity', ok:true, desc:`Applied on /data/anonymized endpoint. Names removed, QIs generalized.`},
+  ];
+  document.getElementById('access-profile').innerHTML = layers.map(l => `
+    <div class="layer-row">
+      <div class="layer-status ls-ok">✓</div>
+      <div class="layer-name">${l.name}</div>
+      <div class="layer-desc">${l.desc}</div>
+    </div>`).join('');
+
+  document.getElementById('perm-list').innerHTML = u.permissions.map(p =>
+    `<span class="tag tag-conf" style="font-family:var(--font-mono);font-size:11px">${p}</span>`
+  ).join('') || '<span style="color:var(--muted);font-size:12px">No permissions assigned.</span>';
+}
+
+// ── RAW ───────────────────────────────────────────────────────────────────────
+async function loadRaw() {
+  const el = document.getElementById('raw-content');
+  const d = await apiFetch('/data/raw');
+  if (d.__status !== 200) { el.innerHTML = renderBlocked(d, 'raw patient records', 'SECRET'); return; }
+  el.innerHTML = `
+    <div class="alert alert-warn"><span class="alert-icon">⚠</span><span>This is raw unmasked data. All ${d.record_count} records shown with full identifiers. Clearance: ${d.user_clearance}.</span></div>
+    <div class="card"><div class="card-title">Patient records (${d.record_count})</div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Age</th><th>ZIP</th><th>Gender</th><th>Diagnosis</th><th>Salary</th><th>Classification</th></tr></thead>
+    <tbody>${d.records.map(r=>`<tr><td style="color:var(--muted)">${r.id}</td><td style="color:var(--accent)">${r.name}</td><td>${r.age}</td><td>${r.zipcode}</td><td><span class="tag ${r.gender==='M'?'tag-m':'tag-f'}">${r.gender}</span></td><td>${r.disease}</td><td>$${r.salary.toLocaleString()}</td><td><span class="tag tag-secret">${r.classification}</span></td></tr>`).join('')}</tbody>
+    </table></div></div>`;
+}
+
+// ── ANONYMIZED ────────────────────────────────────────────────────────────────
+async function loadAnon() {
+  const el = document.getElementById('anon-content');
+  const d = await apiFetch('/data/anonymized?k=2');
+  if (d.__status !== 200) { el.innerHTML = renderBlocked(d, 'anonymized patient records', 'CONFIDENTIAL'); return; }
+  const gen = d.generalization_applied;
+  el.innerHTML = `
+    <div class="alert alert-success"><span class="alert-icon">✓</span><span>k-Anonymity applied. ${d.total_released} of ${d.total_original} records released. Every record indistinguishable from ≥${d.k_achieved} others. Utility: ${d.utility_retention}</span></div>
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-val" style="color:var(--success)">${d.k_achieved}</div><div class="stat-label">k achieved</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${d.total_released}</div><div class="stat-label">Records released</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--warning)">${d.suppressed_count}</div><div class="stat-label">Suppressed</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${d.utility_retention}</div><div class="stat-label">Data utility</div></div>
+    </div>
+    <div class="card"><div class="card-title">Generalization applied</div>
+      <div style="display:flex;gap:16px;font-size:12px;margin-bottom:16px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Age transform</div><div style="color:var(--accent)">${gen.age_transform}</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">ZIP transform</div><div style="color:var(--accent)">${gen.zip_transform}</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1"><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Identifiers removed</div><div style="color:var(--success)">name</div></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Anonymized records</div>
+    <div class="table-wrap"><table><thead><tr><th>Age range</th><th>ZIP prefix</th><th>Gender</th><th>Diagnosis</th><th>Salary</th></tr></thead>
+    <tbody>${d.anonymized.map(r=>`<tr><td style="color:var(--warning)">${r.age}</td><td style="color:var(--warning)">${r.zipcode}</td><td><span class="tag ${r.gender==='M'?'tag-m':'tag-f'}">${r.gender}</span></td><td>${r.disease}</td><td>$${Number(r.salary).toLocaleString()}</td></tr>`).join('')}</tbody>
+    </table></div></div>`;
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────────
+async function loadSummary() {
+  const el = document.getElementById('summary-content');
+  const d = await apiFetch('/data/summary');
+  if (d.__status !== 200) { el.innerHTML = renderBlocked(d, 'summary statistics', 'PUBLIC'); return; }
+  const diseases = Object.entries(d.disease_distribution).sort((a,b)=>b[1]-a[1]);
+  el.innerHTML = `
+    <div class="alert alert-info"><span class="alert-icon">ℹ</span><span>Aggregate statistics only. No individual records returned. This is the minimum necessary access for the Guest role.</span></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${d.total_patients}</div><div class="stat-label">Total patients</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--success)">$${Math.round(d.average_salary).toLocaleString()}</div><div class="stat-label">Avg salary</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${d.gender_distribution.M}</div><div class="stat-label">Male patients</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${d.gender_distribution.F}</div><div class="stat-label">Female patients</div></div>
+    </div>
+    <div class="card"><div class="card-title">Disease distribution</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${diseases.map(([dis,cnt])=>`
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="min-width:130px;font-size:12px">${dis}</div>
+        <div style="flex:1;background:var(--surface2);border-radius:4px;height:18px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(cnt/d.total_patients*100)}%;background:var(--accent);opacity:.7;border-radius:4px;transition:width .5s"></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);min-width:30px">${cnt}</div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+// ── BLP ───────────────────────────────────────────────────────────────────────
+async function testBLPRead() {
+  const el = document.getElementById('blp-read-result');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const d = await apiFetch('/data/raw');
+  if (d.__status === 200) {
+    el.innerHTML = renderLayerTrace([
+      {ok:true, name:'JWT Authentication', desc:'Token valid, user loaded.'},
+      {ok:true, name:'RBAC Engine', desc:`Permission data:raw:read granted to role ${currentUser.roles[0]}.`},
+      {ok:true, name:'Bell-LaPadula (No Read Up)', desc:`Clearance ${currentUser.security_level_name}(${currentUser.security_level_value}) >= SECRET(2). Access granted.`},
+    ], true, `${d.record_count} raw records returned.`);
+  } else if (d.detail && d.detail.error && d.detail.error.includes('Bell-LaPadula')) {
+    el.innerHTML = renderLayerTrace([
+      {ok:true, name:'JWT Authentication', desc:'Token valid, user loaded.'},
+      {ok:true, name:'RBAC Engine', desc:`Permission data:raw:read granted to role ${currentUser.roles[0]}.`},
+      {ok:false, name:'Bell-LaPadula (No Read Up)', desc:`Clearance ${d.detail.subject_clearance} < Classification ${d.detail.object_classification}. No Read Up violated.`},
+    ], false, d.detail.explanation);
+  } else {
+    el.innerHTML = renderLayerTrace([
+      {ok:true, name:'JWT Authentication', desc:'Token valid, user loaded.'},
+      {ok:false, name:'RBAC Engine', desc:`Role ${currentUser.roles[0]} does not have data:raw:read permission.`},
+      {ok:null, name:'Bell-LaPadula', desc:'Skipped — RBAC already denied the request.'},
+    ], false, d.detail?.hint || 'RBAC denied.');
+  }
+}
+
+async function testBLPWrite() {
+  const el = document.getElementById('blp-write-result');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const payload = JSON.stringify({age:35,zipcode:'10025',gender:'M',disease:'Flu',salary:60000});
+  const d = await apiFetch('/data/records', {method:'POST', body:payload});
+  if (d.__status === 201) {
+    el.innerHTML = renderLayerTrace([
+      {ok:true, name:'JWT Authentication', desc:'Token valid, user loaded.'},
+      {ok:true, name:'RBAC Engine', desc:`Permission data:write granted to role ${currentUser.roles[0]}.`},
+      {ok:true, name:'Bell-LaPadula (No Write Down)', desc:`Clearance ${currentUser.security_level_name}(${currentUser.security_level_value}) <= SECRET(2). No Write Down satisfied.`},
+    ], true, `Record created with ID ${d.created?.id}. Classified SECRET.`);
+  } else if (d.detail && d.detail.error && d.detail.error.includes('Write Down')) {
+    el.innerHTML = renderLayerTrace([
+      {ok:true, name:'JWT Authentication', desc:'Token valid, user loaded.'},
+      {ok:true, name:'RBAC Engine', desc:`Permission data:write granted to role ${currentUser.roles[0]}.`},
+      {ok:false, name:'Bell-LaPadula (No Write Down)', desc:`Clearance ${d.detail.subject_clearance} > Classification ${d.detail.object_classification}. Writing would leak high-clearance info downward.`},
+    ], false, d.detail.explanation);
+  } else {
+    el.innerHTML = renderLayerTrace([
+      {ok:true, name:'JWT Authentication', desc:'Token valid, user loaded.'},
+      {ok:false, name:'RBAC Engine', desc:`Role ${currentUser.roles[0]} does not have data:write permission.`},
+      {ok:null, name:'Bell-LaPadula', desc:'Skipped — RBAC already denied.'},
+    ], false, d.detail?.hint || 'RBAC denied.');
+  }
+}
+
+function renderLayerTrace(layers, success, verdict) {
+  const rows = layers.map(l => `
+    <div class="layer-row">
+      <div class="layer-status ${l.ok===true?'ls-ok':l.ok===false?'ls-fail':'ls-skip'}">${l.ok===true?'✓':l.ok===false?'✗':'—'}</div>
+      <div class="layer-name">${l.name}</div>
+      <div class="layer-desc">${l.desc}</div>
+    </div>`).join('');
+  const v = `<div class="alert ${success?'alert-success':'alert-danger'}" style="margin-top:12px"><span class="alert-icon">${success?'✓':'✗'}</span><span>${verdict}</span></div>`;
+  return `<div class="layer-trace">${rows}</div>${v}`;
+}
+
+// ── ATTACK ────────────────────────────────────────────────────────────────────
+async function loadAttack() {
+  const el = document.getElementById('attack-content');
+  const d = await apiFetch('/attack/linking-demo?k=2');
+  if (d.__status !== 200) { el.innerHTML = renderBlocked(d, 'attack demo', 'CONFIDENTIAL'); return; }
+  const s = d.attack_summary;
+  el.innerHTML = `
+    <div class="alert alert-warn"><span class="alert-icon">⚠</span><span>Real incident: Latanya Sweeney (1997) re-identified 87% of Massachusetts hospital records using a $20 voter list. This demo replicates that attack — then shows k-Anonymity defeating it.</span></div>
+    <div class="attack-stat">
+      <div class="attack-box"><div class="attack-num bad">${s.re_identification_rate_before}</div><div class="attack-sub">Re-identified WITHOUT defense</div></div>
+      <div class="attack-box"><div class="attack-num good">${s.re_identification_rate_after}</div><div class="attack-sub">Re-identified WITH k-Anonymity</div></div>
+    </div>
+    <div class="card"><div class="card-title">Step 3 — Re-identified records (before defense)</div>
+    <div class="alert alert-danger" style="margin-bottom:12px"><span class="alert-icon">✗</span><span>These patients were successfully re-identified by joining with voter registration data.</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Age</th><th>ZIP</th><th>Gender</th><th>Diagnosis (EXPOSED)</th></tr></thead>
+    <tbody>${(d.step3_reidentified_records||[]).slice(0,8).map(r=>`<tr><td style="color:var(--danger)">${r.name}</td><td>${r.age}</td><td>${r.zipcode}</td><td>${r.gender}</td><td style="color:var(--danger);font-weight:500">${r.disease}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+    <div class="card"><div class="card-title">Step 4 — After k-Anonymity (defense active)</div>
+    <div class="alert alert-success" style="margin-bottom:12px"><span class="alert-icon">✓</span><span>Same attack on anonymized data. Age ranges and masked ZIPs prevent unique matching.</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Age range</th><th>ZIP prefix</th><th>Gender</th><th>Diagnosis</th></tr></thead>
+    <tbody>${(d.step4_k_anonymous_sample||[]).map(r=>`<tr><td style="color:var(--success)">${r.age}</td><td style="color:var(--success)">${r.zipcode}</td><td>${r.gender}</td><td>${r.disease}</td></tr>`).join('')}</tbody>
+    </table></div></div>`;
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const el = document.getElementById('users-content');
+  const d = await apiFetch('/admin/users');
+  if (!Array.isArray(d)) { el.innerHTML = renderBlocked(d, 'user list', 'TOP_SECRET'); return; }
+  el.innerHTML = `
+    <div class="card"><div class="card-title">Registered staff (${d.length})</div>
+    <div class="table-wrap"><table><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Clearance</th><th>Level</th><th>Status</th></tr></thead>
+    <tbody>${d.map(u=>`<tr>
+      <td style="color:var(--accent);font-weight:500">${u.username}</td>
+      <td style="color:var(--muted)">${u.email}</td>
+      <td>${u.roles.join(', ')}</td>
+      <td><span class="tag ${u.security_level_name==='TOP_SECRET'?'tag-secret':u.security_level_name==='SECRET'?'tag-warn':'tag-conf'}" style="${u.security_level_name==='SECRET'?'background:#1c1400;color:#fcd34d;border:1px solid #78350f':''}"> ${u.security_level_name}</span></td>
+      <td>${u.security_level}</td>
+      <td><span class="tag tag-conf">${u.is_active?'Active':'Inactive'}</span></td>
+    </tr>`).join('')}</tbody>
+    </table></div></div>`;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function renderBlocked(d, resource, needed) {
+  const isBLP = d.detail && typeof d.detail === 'object' && d.detail.error && d.detail.error.includes('Bell-LaPadula');
+  const isRBAC = d.detail && typeof d.detail === 'object' && d.detail.error && d.detail.error.includes('RBAC');
+  const msg = isBLP ? d.detail.explanation : isRBAC ? d.detail.hint : (typeof d.detail === 'string' ? d.detail : 'Access denied.');
+  const layer = isBLP ? 'Bell-LaPadula policy' : isRBAC ? 'RBAC engine' : 'Security layer';
+  return `
+    <div class="alert alert-danger"><span class="alert-icon">✗</span><span><strong>Access denied by ${layer}.</strong><br>${msg}</span></div>
+    <div class="card"><div class="card-title">Security layer trace</div>
+    <div class="layer-trace">
+      <div class="layer-row"><div class="layer-status ls-ok">✓</div><div class="layer-name">JWT Authentication</div><div class="layer-desc">Token valid. User authenticated.</div></div>
+      <div class="layer-row"><div class="layer-status ${isRBAC?'ls-fail':'ls-ok'}">${isRBAC?'✗':'✓'}</div><div class="layer-name">RBAC Engine</div><div class="layer-desc">${isRBAC?`Role ${currentUser.roles[0]} lacks required permission.`:`Permission granted by role ${currentUser.roles[0]}.`}</div></div>
+      <div class="layer-row"><div class="layer-status ${isBLP?'ls-fail':isRBAC?'ls-skip':'ls-ok'}">${isBLP?'✗':isRBAC?'—':'✓'}</div><div class="layer-name">Bell-LaPadula</div><div class="layer-desc">${isBLP?`Clearance ${d.detail.subject_clearance} insufficient for ${d.detail.object_classification} data.`:isRBAC?'Skipped — RBAC already denied.':'Clearance check passed.'}</div></div>
+    </div></div>`;
+}
+
+document.getElementById('pwd').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
