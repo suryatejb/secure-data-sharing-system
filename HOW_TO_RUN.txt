@@ -82,6 +82,28 @@ Once running, open your browser to:
 Press Ctrl+C to stop the server.
 
 
+OPTION C: Run with the Web UI (browser-based hospital portal)
+--------------------------------------------------------------
+This option runs the full graphical interface for the project.
+You need TWO terminal windows open at the same time.
+
+  Terminal 1 — API server:
+      python run.py
+
+  Terminal 2 — UI server:
+      python -m http.server 3000
+
+Then open Chrome and go to:
+      http://localhost:3000/hospital_portal.html
+
+The portal shows quick-login buttons for all five users, a
+live security layer trace for every request, the anonymized
+data view with k-anonymity statistics, and the linking attack
+demo page — all without needing Swagger or curl.
+
+Press Ctrl+C in both terminals to stop.
+
+
 ================================================================
 STEP 5 — Test the API (requires server running)
 ================================================================
